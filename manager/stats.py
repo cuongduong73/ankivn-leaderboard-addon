@@ -12,7 +12,7 @@ class Stats:
         self.new_day_time = time(int(self.new_day), 0, 0)
         self.update_time_now()
 
-    def update_time_now(self):
+    def update_time_now(self) -> time:
         self.time_now = datetime.now().time()
         return self.time_now
 
@@ -58,7 +58,7 @@ class Stats:
         return Streak
 
     ### daily study ###
-    def get_reviews_and_retention_today(self) -> tuple[int, int]:
+    def get_reviews_and_retention_today(self) -> tuple[int, float]:
         new_day_time = self.new_day_time
         time_now = self.update_time_now()
 
@@ -69,7 +69,7 @@ class Stats:
             start_day = datetime.combine(date.today(), new_day_time)
         return Stats.get_reviews_and_retention(start_day, start_day + timedelta(days=1))
 
-    def get_time_spend_today(self) -> int:
+    def get_time_spend_today(self) -> float:
         new_day_time = self.new_day_time
         time_now = self.update_time_now()
 
@@ -81,7 +81,7 @@ class Stats:
         return Stats.get_time_spend(start_day, start_day + timedelta(days=1))
 
     ### season study ###
-    def get_reviews_and_retention_season(self):
+    def get_reviews_and_retention_season(self) -> tuple[int, float]:
         season_start = self.season_start
         season_end = self.season_end
 
@@ -89,7 +89,7 @@ class Stats:
             season_start, season_end)
         return reviews, retention
 
-    def get_time_spend_season(self) -> int:
+    def get_time_spend_season(self) -> float:
         season_start = self.season_start
         season_end = self.season_end
         return Stats.get_time_spend(season_start, season_end)
@@ -117,7 +117,7 @@ class Stats:
         return days_learned, days_over
 
     @staticmethod
-    def get_reviews_and_retention(start_date: datetime, end_date: datetime) -> tuple[int, int]:
+    def get_reviews_and_retention(start_date: datetime, end_date: datetime) -> tuple[int, float]:
         start = int(start_date.timestamp() * 1000)
         end = int(end_date.timestamp() * 1000)
         reviews = mw.col.db.scalar(
@@ -132,7 +132,7 @@ class Stats:
         return reviews, retention
 
     @staticmethod
-    def get_time_spend(start_date: datetime, end_date: datetime) -> int:
+    def get_time_spend(start_date: datetime, end_date: datetime) -> float:
         start = int(start_date.timestamp() * 1000)
         end = int(end_date.timestamp() * 1000)
 

@@ -5,14 +5,14 @@ from aqt.qt import QDialog, qtmajor
 from aqt.utils import tooltip, showInfo, showWarning, askUser
 
 if qtmajor > 5:
-    from .ui.pyqt6UI import config, forgot_password, register, change_password
+    from .pyqt6UI import config, forgot_password, register, change_password
     from PyQt6 import QtCore
 else:
-    from .ui.pyqt5UI import config, forgot_password, register, change_password
+    from .pyqt5UI import config, forgot_password, register, change_password
     from PyQt5 import QtCore
 
-from . import version
-from .Manager import Manager
+from .. import version
+from ..manager.season import LeagueSeason
 
 CONFIG_KEY_USER = "username"
 CONFIG_KEY_PASS = "password"
@@ -38,7 +38,7 @@ class ConfigWrapper(QDialog):
     def __init__(self) -> None:
         super().__init__()
         self.dialog_ui = config.Ui_ConfigDialog()
-        self.manager = Manager()
+        self.manager = LeagueSeason(1)
         self._is_signin = False
         self._config = ConfigWrapper.get_config()
         self.dialog_ui.setupUi(self)
@@ -164,8 +164,8 @@ class ConfigWrapper(QDialog):
             self.forgot_password_dialog.show()
 
     def _on_sync(self):
-        daily_stats = self.manager.get_daily_stats()
-        season_stats = self.manager.get_season_stats()
+        daily_stats = self.manager.get_user_today_stats().to_json()
+        season_stats = self.manager.get_user_season_stats().to_json()
 
         showInfo(json.dumps(daily_stats))
         showInfo(json.dumps(season_stats))
