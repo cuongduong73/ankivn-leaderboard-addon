@@ -12,3 +12,7 @@ app.include_router(user.router)
 app.include_router(authentication.router)
 app.include_router(league.router)
 app.include_router(achievement.router)
+
+@app.get("/")
+def hello():
+    return {"msg": "Hello World"}
