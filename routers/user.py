@@ -39,10 +39,10 @@ def create(request: schemas.CreateUserRequest, db: Session = Depends(get_db)):
 
 @router.put("/", status_code=status.HTTP_202_ACCEPTED)
 def set_role(request: schemas.SetUserRoleRequest, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
-    # if current_user not in ADMIN_USERS:
-    #     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-    #                         detail=f"User {current_user} doesn't have this permission !")   
-    check_permission(current_user, db)     
+    if current_user not in ADMIN_USERS:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail=f"User {current_user} doesn't have this permission !")   
+    # check_permission(current_user, db)     
     user = db.query(models.User).filter(models.User.username == request.username)
     if not user.first():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
