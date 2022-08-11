@@ -75,6 +75,7 @@ def add_user(request: schemas.AddUserRequest, response: Response,db: Session = D
     if league_user_info.first():
         response.status_code = status.HTTP_202_ACCEPTED
         league_user_info.update({"role": 1})
+        db.commit()
     else:
         response.status_code = status.HTTP_201_CREATED        
         db.add(info)
