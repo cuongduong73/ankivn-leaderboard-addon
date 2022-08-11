@@ -58,7 +58,7 @@ def show_by_name(request: schemas.LeagueInfoRequest, db: Session = Depends(get_d
     return create_league_info_response(info, db)
 
 @router.post("/add_user", status_code=status.HTTP_202_ACCEPTED)
-def add_user(request: schemas.AddUserRequest, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
+def add_user(request: schemas.AddUserRequest, response: Response,db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
     check_permission(current_user, db)
     league_info = db.query(models.League).filter(
         request.league.name == models.League.name).filter(
@@ -68,12 +68,18 @@ def add_user(request: schemas.AddUserRequest, db: Session = Depends(get_db), cur
                     detail=f"League {request.name} - ss{request.season} is not existed !")
 
     user_info = check_user_existed(request.username, db)
+    league_user_info = db.query(models.LeagueUser).filter(models.LeagueUser.user_id == user_info.id)
     info = models.LeagueUser(league_id=league_info.id,
-                             user_id=user_info.id,
-                             role=1)
-    db.add(info)
-    db.commit()
-    db.refresh(info)
+                        user_id=user_info.id,
+                        role=1)
+    if league_user_info.first():
+        response.status_code = status.HTTP_202_ACCEPTED
+        league_user_info.update({"role": 1})
+    else:
+        response.status_code = status.HTTP_201_CREATED        
+        db.add(info)
+        db.commit()
+        db.refresh(info)
     return {"status": 1}
 
 @router.post("/join", status_code=status.HTTP_202_ACCEPTED)
