@@ -8,7 +8,7 @@ import oauth2
 
 from form import schemas, models
 from database import get_db
-from routers.helper import create_user_info_response, check_user_existed_by_name, check_user_existed_by_id, ROLE_DEPUTY_AD
+from routers.helper import ROLE_USER, create_user_info_response, check_user_existed_by_name, check_user_existed_by_id, ROLE_DEPUTY_AD
 
 router = APIRouter(
     prefix="/user",
@@ -29,7 +29,7 @@ def create(request: schemas.CreateUserRequest, db: Session = Depends(get_db)):
     new_user = models.User(username=request.username,
                            password=Hash.bcrypt(request.password),
                            email=request.email,
-                           role=0,gold=0,silver=0,bronze=0)
+                           role=ROLE_USER,gold=0,silver=0,bronze=0)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)

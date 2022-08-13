@@ -36,6 +36,7 @@ class CreateUserResponse(BaseModel):
     username: str
     email: EmailStr
     role: int
+    id: int
 
     class Config():
         orm_mode = True

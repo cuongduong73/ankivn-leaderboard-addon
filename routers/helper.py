@@ -104,6 +104,7 @@ def create_user_info_response(user: models.User, db: Session) -> schemas.GetUser
     response = schemas.GetUserResponse(username=user.username,
                                         email=user.email,
                                         role=user.role,
+                                        id=user.id,
                                         achievements=achievements,
                                         leagues=leagues)
     return response
