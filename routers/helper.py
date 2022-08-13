@@ -3,6 +3,11 @@ from form import models, schemas
 from fastapi import status, HTTPException
 from utils import get_timestamp, calculate_timedelta
 
+ROLE_USER = 0
+ROLE_MOD = 1
+ROLE_DEPUTY_AD = 2
+ROLE_ADMIN = 5
+
 def create_league_info_response(info, db) -> schemas.LeagueInfoResponse:
     users = []
     for i in info.users:
@@ -62,21 +67,28 @@ def create_league_data_response(league_info, db) -> schemas.LeagueDataResponse:
     return response
 
 
-def check_permission(username: str, db: Session):
-    current_user_info = db.query(models.User).filter(username == models.User.username).first()
-    if not current_user_info: 
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"User {username} is not existed !")
-    if current_user_info.role <= 1:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f"User {username} doesn't have this permission !")
-    return current_user_info
+# def check_permission(username: str, db: Session):
+#     current_user_info = db.query(models.User).filter(username == models.User.username).first()
+#     if not current_user_info: 
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+#                     detail=f"User {username} is not existed !")
+#     if current_user_info.role <= 1:
+#         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+#                     detail=f"User {username} doesn't have this permission !")
+#     return current_user_info
 
-def check_user_existed(username: str, db: Session):
-    user_info = db.query(models.User).filter(username == models.User.username).first()
-    if not user_info:
+def check_user_existed_by_name(username: str, db: Session):
+    user_info = db.query(models.User).filter(username == models.User.username)
+    if not user_info.first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"User {username} is not existed !")
+    return user_info
+
+def check_user_existed_by_id(id: int, db: Session):
+    user_info = db.query(models.User).filter(id == models.User.id)
+    if not user_info.first():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"User id {id} is not existed !")
     return user_info
 
 def create_user_info_response(user: models.User, db: Session) -> schemas.GetUserResponse:

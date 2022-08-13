@@ -6,7 +6,7 @@ from database import get_db
 from form import models, schemas
 import oauth2
 from utils import calculate_xp, calculate_timedelta,  get_timestamp
-from routers.helper import check_permission, create_league_info_response, check_user_existed, create_league_data_response
+from routers.helper import ROLE_MOD, create_league_info_response, check_user_existed_by_name, create_league_data_response
 
 router = APIRouter(
     prefix="/league",
@@ -15,7 +15,10 @@ router = APIRouter(
 
 @router.post("/create", response_model=schemas.CreateLeagueResponse)
 def create(request: schemas.CreateLeagueRequest, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
-    check_permission(current_user, db)
+    current_user_info = check_user_existed_by_name(current_user, db).first()
+    if current_user_info.role < ROLE_MOD:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                    detail=f"User {current_user} doesn't have this permission !")            
 
     league_info = db.query(models.League).filter(request.name == models.League.name).filter(request.season == models.League.season).first()
     if league_info: 
@@ -59,7 +62,10 @@ def show_by_name(request: schemas.LeagueInfoRequest, db: Session = Depends(get_d
 
 @router.post("/add_user", status_code=status.HTTP_202_ACCEPTED)
 def add_user(request: schemas.AddUserRequest, response: Response,db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
-    check_permission(current_user, db)
+    current_user_info = check_user_existed_by_name(current_user, db).first()
+    if current_user_info.role < ROLE_MOD:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                    detail=f"User {current_user} doesn't have this permission !")        
     league_info = db.query(models.League).filter(
         request.league.name == models.League.name).filter(
         request.league.season == models.League.season).first()
@@ -67,7 +73,7 @@ def add_user(request: schemas.AddUserRequest, response: Response,db: Session = D
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"League {request.name} - ss{request.season} is not existed !")
 
-    user_info = check_user_existed(request.username, db)
+    user_info = check_user_existed_by_name(request.username, db).first()
     league_user_info = db.query(models.LeagueUser).filter(models.LeagueUser.user_id == user_info.id)
     info = models.LeagueUser(league_id=league_info.id,
                         user_id=user_info.id,
@@ -85,7 +91,6 @@ def add_user(request: schemas.AddUserRequest, response: Response,db: Session = D
 
 @router.post("/join", status_code=status.HTTP_202_ACCEPTED)
 def submit_join(request: schemas.LeagueInfoRequest, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
-    
     league_info = db.query(models.League).filter(
         request.name == models.League.name).filter(
         request.season == models.League.season).first()
@@ -93,7 +98,7 @@ def submit_join(request: schemas.LeagueInfoRequest, db: Session = Depends(get_db
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"League {request.name} - ss{request.season} is not existed !")
     
-    user_info = check_user_existed(current_user, db)
+    user_info = check_user_existed_by_name(current_user, db).first()
     league_user_info = db.query(models.LeagueUser).filter(models.LeagueUser.league_id == league_info.id).filter(models.LeagueUser.user_id == user_info.id).first()
     if league_user_info:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
@@ -189,7 +194,10 @@ def get(request: schemas.LeagueDataRequest, db: Session = Depends(get_db)):
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete(id: int, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
-    check_permission(current_user, db)
+    current_user_info = check_user_existed_by_name(current_user, db).first()
+    if current_user_info.role < ROLE_MOD:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                    detail=f"User {current_user} doesn't have this permission !")        
     league = db.query(models.League).filter(id == models.League.id)
     if not league.first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
