@@ -91,6 +91,7 @@ def create_user_info_response(user: models.User, db: Session) -> schemas.GetUser
     achievements = schemas.Achievements(gold=user.gold, silver=user.silver, bronze=user.bronze)
     response = schemas.GetUserResponse(username=user.username,
                                         email=user.email,
+                                        role=user.role,
                                         achievements=achievements,
                                         leagues=leagues)
     return response
