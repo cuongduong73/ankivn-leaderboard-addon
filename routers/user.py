@@ -65,20 +65,43 @@ def get_all(db: Session = Depends(get_db)):
         responses.append(create_user_info_response(user, db))
     return responses
 
-@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete(id: int, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
+# @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+# def delete(id: int, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
+#     current_user_info = check_user_existed_by_name(current_user, db).first()
+#     user_infos = check_user_existed_by_id(id, db)
+#     if current_user_info.role < ROLE_DEPUTY_AD or current_user_info.role < user_infos.first().role :
+#         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+#                             detail=f"User {current_user} doesn't have this permission !")    
+
+#     league_user = db.query(models.LeagueUser).filter(id == models.LeagueUser.user_id)
+#     if league_user.first():
+#         league_user.delete(synchronize_session=False)
+#         db.commit()
+    
+#     league_data = db.query(models.LeagueData).filter(id == models.LeagueData.user_id)
+#     if league_data.first():
+#         league_data.delete(synchronize_session=False)
+#         db.commit()
+          
+#     user_infos.delete(synchronize_session=False)
+#     db.commit()
+#     return {"status": 1}
+
+
+@router.delete("/{user}", status_code=status.HTTP_204_NO_CONTENT)
+def delete(user: str, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
     current_user_info = check_user_existed_by_name(current_user, db).first()
-    user_infos = check_user_existed_by_id(id, db)
+    user_infos = check_user_existed_by_name(user, db)
     if current_user_info.role < ROLE_DEPUTY_AD or current_user_info.role < user_infos.first().role :
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail=f"User {current_user} doesn't have this permission !")    
 
-    league_user = db.query(models.LeagueUser).filter(id == models.LeagueUser.user_id)
+    league_user = db.query(models.LeagueUser).filter(user_infos.first().id == models.LeagueUser.user_id)
     if league_user.first():
         league_user.delete(synchronize_session=False)
         db.commit()
     
-    league_data = db.query(models.LeagueData).filter(id == models.LeagueData.user_id)
+    league_data = db.query(models.LeagueData).filter(user_infos.first().id == models.LeagueData.user_id)
     if league_data.first():
         league_data.delete(synchronize_session=False)
         db.commit()
