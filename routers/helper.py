@@ -32,7 +32,7 @@ def create_league_data_response(league_info, db) -> schemas.LeagueDataResponse:
     day = min(today, league_info.duration)       
 
     league_data = db.query(models.LeagueData).filter(
-                                models.LeagueData.day == day).filter(
+                                # models.LeagueData.day == day).filter(
                                     models.LeagueData.league_id == league_info.id).order_by(models.LeagueData.xp_league.desc())
     if not league_data.first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
