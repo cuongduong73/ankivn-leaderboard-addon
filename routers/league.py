@@ -15,7 +15,7 @@ router = APIRouter(
     tags=["Leagues"]
 )
 
-@router.post("/create", response_model=schemas.CreateLeagueResponse)
+@router.post("/create", response_model=schemas.CreateLeagueResponse, status_code=status.HTTP_201_CREATED)
 def create(request: schemas.CreateLeagueRequest, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
     current_user_info = check_user_existed_by_name(current_user, db).first()
     if current_user_info.role < ROLE_MOD:
