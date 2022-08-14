@@ -107,7 +107,8 @@ class CreateLeagueRequest(LeagueInfoRequest):
                 "season": 1,
                 "start_time": 1659286800,
                 "duration": 100,
-                "reset": 4
+                "reset": 4,
+                "constraint": 20
             }
         }
 
