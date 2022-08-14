@@ -5,8 +5,9 @@ from env import JWT_SECRET, JWT_ALGORITHM, JWT_EXPIRE_MINUTES
 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=int(JWT_EXPIRE_MINUTES))
-    to_encode.update({"exp": expire})
+    if data["sub"] == "admin":
+        expire = datetime.utcnow() + timedelta(minutes=int(JWT_EXPIRE_MINUTES))
+        to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
     return encoded_jwt
 
