@@ -9,12 +9,14 @@
 #     ui.setupUi(MainWindow)
 #     MainWindow.show()
 #     sys.exit(app.exec_())
-
+import os
+import sys
+sys.path.append(os.path.dirname(__file__))
 from aqt import mw
 from aqt.qt import QAction, QMenu, QKeySequence
 from aqt.utils import showInfo, showWarning, tooltip, askUser
 
-from .ui.config_wrapper import ConfigWrapper
+from .config_wrapper import ConfigWrapper
 
 
 def profileHook():
@@ -73,5 +75,5 @@ except:
     # 	showInfo("Because you're using an older Anki version some features of the Leaderboard add-on can't be used.", title="Leaderboard")
     # write_config("import_error", False)
 
-add_menu('&AnkiVN', "&Config", invoke_setup)
+add_menu('&AnkiVN', "&Leaderboard", invoke_setup)
 #mw.addonManager.setConfigAction(__name__, config_setup)
