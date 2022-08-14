@@ -8,7 +8,7 @@ import oauth2
 
 from form import schemas, models
 from database import get_db
-from routers.helper import ROLE_USER, create_user_info_response, check_user_existed_by_name, check_user_existed_by_id, ROLE_DEPUTY_AD
+from routers.helper import ROLE_USER, create_user_info_response, check_user_existed_by_name, ROLE_DEPUTY_AD
 
 router = APIRouter(
     prefix="/user",
@@ -35,18 +35,24 @@ def create(request: schemas.CreateUserRequest, db: Session = Depends(get_db)):
     db.refresh(new_user)
     return new_user
 
-@router.put("/", status_code=status.HTTP_202_ACCEPTED)
+@router.put("/role", status_code=status.HTTP_202_ACCEPTED)
 def set_role(request: schemas.SetUserRoleRequest, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
     current_user_info = check_user_existed_by_name(current_user, db).first()
     user_infos = check_user_existed_by_name(request.username, db)
-    if current_user_info.role < user_infos.first().role or current_user_info.role < request.role:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-                            detail=f"User {current_user} doesn't have this permission !")         
+    # if current_user_info.role < user_infos.first().role or current_user_info.role < request.role:
+    #     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+    #                         detail=f"User {current_user} doesn't have this permission !")         
 
     user_infos.update({"role": request.role})
     db.commit()
     return {"status": 1}
 
+@router.put("/password", status_code=status.HTTP_202_ACCEPTED)
+def update_password(request: schemas.UpdatePasswordRequest, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
+    current_user_info = check_user_existed_by_name(current_user, db)  
+    current_user_info.update({"password": Hash.bcrypt(request.new)})
+    db.commit()
+    return {"status": 1}
 
 @router.get("/{id}", status_code=status.HTTP_200_OK, response_model=schemas.GetUserResponse)
 def get(id: int, db: Session = Depends(get_db)):
@@ -65,36 +71,16 @@ def get_all(db: Session = Depends(get_db)):
         responses.append(create_user_info_response(user, db))
     return responses
 
-# @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-# def delete(id: int, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
-#     current_user_info = check_user_existed_by_name(current_user, db).first()
-#     user_infos = check_user_existed_by_id(id, db)
-#     if current_user_info.role < ROLE_DEPUTY_AD or current_user_info.role < user_infos.first().role :
-#         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-#                             detail=f"User {current_user} doesn't have this permission !")    
-
-#     league_user = db.query(models.LeagueUser).filter(id == models.LeagueUser.user_id)
-#     if league_user.first():
-#         league_user.delete(synchronize_session=False)
-#         db.commit()
-    
-#     league_data = db.query(models.LeagueData).filter(id == models.LeagueData.user_id)
-#     if league_data.first():
-#         league_data.delete(synchronize_session=False)
-#         db.commit()
-          
-#     user_infos.delete(synchronize_session=False)
-#     db.commit()
-#     return {"status": 1}
-
-
 @router.delete("/{user}", status_code=status.HTTP_204_NO_CONTENT)
 def delete(user: str, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
-    current_user_info = check_user_existed_by_name(current_user, db).first()
+    current_user_infos = check_user_existed_by_name(current_user, db)
     user_infos = check_user_existed_by_name(user, db)
-    if current_user_info.role < ROLE_DEPUTY_AD or current_user_info.role < user_infos.first().role :
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-                            detail=f"User {current_user} doesn't have this permission !")    
+
+    if current_user_infos.first().username != user_infos.first().username:
+        # Handle admin delete
+        if current_user_infos.first().role < ROLE_DEPUTY_AD or current_user_infos.first().role < user_infos.first().role :
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                                detail=f"User {current_user} doesn't have this permission !")    
 
     league_user = db.query(models.LeagueUser).filter(user_infos.first().id == models.LeagueUser.user_id)
     if league_user.first():
@@ -105,7 +91,9 @@ def delete(user: str, db: Session = Depends(get_db), current_user: str = Depends
     if league_data.first():
         league_data.delete(synchronize_session=False)
         db.commit()
-          
+        
     user_infos.delete(synchronize_session=False)
     db.commit()
+
+    
     return {"status": 1}

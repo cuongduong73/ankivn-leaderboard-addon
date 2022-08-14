@@ -3,10 +3,12 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from database import get_db
+from ..env import MIN_ADDON_VERSION
 from form import models, schemas
 import oauth2
-from utils import calculate_xp, calculate_timedelta,  get_timestamp
+from utils import calculate_xp, get_timestamp, calc_day_from
 from routers.helper import ROLE_MOD, create_league_info_response, check_user_existed_by_name, create_league_data_response
+from packaging import version
 
 router = APIRouter(
     prefix="/league",
@@ -113,16 +115,20 @@ def submit_join(request: schemas.LeagueInfoRequest, db: Session = Depends(get_db
 
 @router.post("/sync", status_code=status.HTTP_201_CREATED)
 def sync(request: schemas.SyncRequest, response: Response, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
+    if version.parse(MIN_ADDON_VERSION) > version.parse(request.version):
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE,
+                    detail="Your addon version is out of date, update addon and try again !")  
     league_info = db.query(models.League).filter(models.League.id == request.league_id).first()
     if not league_info:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"League id {request.league_id} is not existed !")        
     timestamp = get_timestamp()
-    today = calculate_timedelta(league_info.start_time, timestamp)
-    if today > league_info.duration:
+    start_timestamp = league_info.start_time
+    end_timestamp = league_info.start_time + league_info.duration * 60 * 60 * 24
+    if timestamp > end_timestamp:
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE,
                             detail=f"League {league_info.name} - ss{league_info.season} has finished !")
-    if today < 0:
+    if timestamp < start_timestamp:
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE,
                             detail=f"League {league_info.name} - ss{league_info.season} has not started !")
     user_info = db.query(models.User).filter(models.User.username == current_user).first()
@@ -134,6 +140,7 @@ def sync(request: schemas.SyncRequest, response: Response, db: Session = Depends
     if not _joined:
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE,
                             detail=f"User {current_user} has not joined {league_info.name} - ss{league_info.season} yet !")
+    today = calc_day_from(start_timestamp, timestamp)
     xp_league = calculate_xp(reviews=request.reviews_league, 
                              retention=request.retention_league, 
                              minutes=request.minutes_league, 
@@ -142,35 +149,38 @@ def sync(request: schemas.SyncRequest, response: Response, db: Session = Depends
     xp_day = calculate_xp(reviews=request.reviews_today, 
                           retention=request.retention_today, 
                           minutes=request.minutes_today)
-
-    league_data = db.query(models.LeagueData).filter(
-#                               models.LeagueData.day == today).filter(                    # Add data for days
-                                    models.LeagueData.user_id == user_info.id).filter(
-                                        models.LeagueData.league_id == request.league_id)
-    new_league_data = models.LeagueData(user_id=user_info.id,
-                                        league_id=request.league_id,
-                                        day=today,
-                                        streak=request.streak,
-                                        study_days=request.study_days,
-                                        reviews_today=request.reviews_today,
-                                        retention_today=request.retention_today,
-                                        minutes_today=request.minutes_today,
-                                        reviews_league=request.reviews_league,
-                                        retention_league=request.retention_league,
-                                        minutes_league=request.minutes_league,
-                                        xp_today=xp_day,
-                                        xp_league=xp_league,
-                                        timestamp=timestamp)
-    if not league_data.first():
-        db.add(new_league_data) 
-        db.commit()
-        db.refresh(new_league_data) 
-        response.status_code = status.HTTP_201_CREATED  
+    if request.minutes_today >= league_info.constraint:
+        league_data = db.query(models.LeagueData).filter(
+    #                               models.LeagueData.day == today).filter(                    # Add data for days
+                                        models.LeagueData.user_id == user_info.id).filter(
+                                            models.LeagueData.league_id == request.league_id)
+        new_league_data = models.LeagueData(user_id=user_info.id,
+                                            league_id=request.league_id,
+                                            day=today,
+                                            streak=request.streak,
+                                            study_days=request.study_days,
+                                            reviews_today=request.reviews_today,
+                                            retention_today=request.retention_today,
+                                            minutes_today=request.minutes_today,
+                                            reviews_league=request.reviews_league,
+                                            retention_league=request.retention_league,
+                                            minutes_league=request.minutes_league,
+                                            xp_today=xp_day,
+                                            xp_league=xp_league,
+                                            timestamp=timestamp)
+        if not league_data.first():
+            db.add(new_league_data) 
+            db.commit()
+            db.refresh(new_league_data) 
+            response.status_code = status.HTTP_201_CREATED  
+        else:
+            new_update_data = schemas.LeagueData(**new_league_data.__dict__)
+            league_data.update(new_update_data.dict())
+            db.commit()
+            response.status_code = status.HTTP_202_ACCEPTED
     else:
-        new_update_data = schemas.LeagueData(**new_league_data.__dict__)
-        league_data.update(new_update_data.dict())
-        db.commit()
-        response.status_code = status.HTTP_202_ACCEPTED
+        # Not study enough time T.B.D
+        pass
 
     return {"status": 1}
 

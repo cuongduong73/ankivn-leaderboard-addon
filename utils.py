@@ -25,7 +25,7 @@ def calculate_xp(reviews: int, retention: float, minutes: int, day: int = 0, stu
 
 seconds_per_day = 60 * 60 * 24
 
-def calculate_timedelta(start_time: int, endtime: int) -> int:
+def calc_day_from(start_time: int, endtime: int) -> int:
     delta_in_seconds = endtime - start_time
     return int((delta_in_seconds + seconds_per_day - 1 ) // seconds_per_day)
 

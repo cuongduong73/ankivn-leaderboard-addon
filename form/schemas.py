@@ -52,7 +52,23 @@ class SetUserRoleRequest(BaseModel):
             }
         }
 
+class UpdatePasswordRequest(BaseModel):
+    old: str
+    new: str
+    class Config():
+        schema_extra = {
+            "example": {
+                "old": "thino1234",
+                "new": "thino12345",
+            }
+        }
 
+    @validator("new")
+    def check_password(cls, v):
+        if not validate_password(v):
+            raise ValueError(
+                "Password must be [8-20] characters, at least one letter and one number")
+        return v
 
 class LeagueInfoRequest(BaseModel):
     name: str
@@ -82,6 +98,7 @@ class CreateLeagueRequest(LeagueInfoRequest):
     start_time: int
     duration: int
     reset: int
+    constraint: int
 
     class Config():
         schema_extra = {
@@ -138,6 +155,7 @@ class TokenData(BaseModel):
 
 class SyncRequest(BaseModel):
     league_id: int
+    version: str
     streak: int
     study_days: int
     reviews_today: int
@@ -161,7 +179,8 @@ class SyncRequest(BaseModel):
                 "minutes_today": 192,
                 "reviews_league": 3069,
                 "retention_league": 92.7,
-                "minutes_league": 602
+                "minutes_league": 602,
+                "version": "0.0.2"
             }
         }
 

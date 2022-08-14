@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from form import models, schemas
 from fastapi import status, HTTPException
-from utils import get_timestamp, calculate_timedelta
+from utils import get_timestamp, calc_day_from
 
 ROLE_USER = 0
 ROLE_MOD = 1
@@ -25,12 +25,13 @@ def create_league_info_response(info, db) -> schemas.LeagueInfoResponse:
                                           duration=info.duration,
                                           reset=info.reset,
                                           id=info.id,
+                                          constraint=info.constraint,
                                           users=users)
     return response
 
 def create_league_data_response(league_info, db) -> schemas.LeagueDataResponse:
     timestamp = get_timestamp()
-    today = calculate_timedelta(league_info.start_time, timestamp) 
+    today = calc_day_from(league_info.start_time, timestamp) 
     if today < 0:
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE,
                             detail=f"League {league_info.name} - ss{league_info.season} has not started !")
@@ -41,7 +42,7 @@ def create_league_data_response(league_info, db) -> schemas.LeagueDataResponse:
                                     models.LeagueData.league_id == league_info.id).order_by(models.LeagueData.xp_league.desc())
     if not league_data.first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"League {league_info.name} - ss{league_info.season} - day {day} data is empty !")
+                    detail=f"League {league_info.name} - ss {league_info.season} - day {day} data is empty !")
 
     users_data = []
     for data in league_data:

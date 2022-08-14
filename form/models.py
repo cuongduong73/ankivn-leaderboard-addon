@@ -28,6 +28,7 @@ class League(Base):
     start_time = Column(Integer)
     duration = Column(Integer)
     reset = Column(Integer)
+    constraint = Column(Integer)
 
     users = relationship("LeagueUser", back_populates="league")
 
