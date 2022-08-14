@@ -49,7 +49,10 @@ def set_role(request: schemas.SetUserRoleRequest, db: Session = Depends(get_db),
 
 @router.put("/password", status_code=status.HTTP_202_ACCEPTED)
 def update_password(request: schemas.UpdatePasswordRequest, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
-    current_user_info = check_user_existed_by_name(current_user, db)  
+    current_user_info = check_user_existed_by_name(current_user, db)
+    if not Hash.verify(current_user_info.first().password, request.old):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail=f"Incorrect password !")  
     current_user_info.update({"password": Hash.bcrypt(request.new)})
     db.commit()
     return {"status": 1}
