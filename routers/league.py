@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from database import get_db
-from ..env import MIN_ADDON_VERSION
+from env import MIN_ADDON_VERSION
 from form import models, schemas
 import oauth2
 from utils import calculate_xp, get_timestamp, calc_day_from
