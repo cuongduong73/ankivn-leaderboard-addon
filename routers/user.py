@@ -39,9 +39,9 @@ def create(request: schemas.CreateUserRequest, db: Session = Depends(get_db)):
 def set_role(request: schemas.SetUserRoleRequest, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
     current_user_info = check_user_existed_by_name(current_user, db).first()
     user_infos = check_user_existed_by_name(request.username, db)
-    # if current_user_info.role < user_infos.first().role or current_user_info.role < request.role:
-    #     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-    #                         detail=f"User {current_user} doesn't have this permission !")         
+    if current_user_info.role < user_infos.first().role or current_user_info.role < request.role:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail=f"User {current_user} doesn't have this permission !")         
 
     user_infos.update({"role": request.role})
     db.commit()
