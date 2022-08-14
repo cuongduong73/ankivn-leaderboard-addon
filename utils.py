@@ -30,5 +30,5 @@ def calculate_timedelta(start_time: int, endtime: int) -> int:
     return int((delta_in_seconds + seconds_per_day - 1 ) // seconds_per_day)
 
 def get_timestamp():
-    return datetime.utcnow().timestamp()
+    return datetime.now().timestamp()
 
