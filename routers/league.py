@@ -62,7 +62,7 @@ def show_by_name(request: schemas.LeagueInfoRequest, db: Session = Depends(get_d
 
     return create_league_info_response(info, db)
 
-@router.post("/add_user", status_code=status.HTTP_202_ACCEPTED)
+@router.post("/add_user/name", status_code=status.HTTP_202_ACCEPTED)
 def add_user_by_name(request: schemas.AddUserByNameRequest, response: Response,db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
     current_user_info = check_user_existed_by_name(current_user, db).first()
     if current_user_info.role < ROLE_MOD:
