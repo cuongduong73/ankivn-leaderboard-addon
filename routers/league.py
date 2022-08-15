@@ -92,7 +92,7 @@ def add_user(request: schemas.AddUserRequest, response: Response,db: Session = D
     return {"status": 1}
 
 @router.post("/join", status_code=status.HTTP_202_ACCEPTED)
-def submit_join(request: schemas.LeagueInfoRequest, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
+def submit_join_by_name(request: schemas.LeagueInfoRequest, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
     league_info = db.query(models.League).filter(
         request.name == models.League.name).filter(
         request.season == models.League.season).first()
@@ -104,7 +104,7 @@ def submit_join(request: schemas.LeagueInfoRequest, db: Session = Depends(get_db
     league_user_info = db.query(models.LeagueUser).filter(models.LeagueUser.league_id == league_info.id).filter(models.LeagueUser.user_id == user_info.id).first()
     if league_user_info:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
-                    detail=f"User {current_user} has submitted to join League {request.name} - ss{request.season} !")        
+                    detail=f"User {current_user} has submitted to join {request.name} - ss{request.season} !")        
     info = models.LeagueUser(league_id=league_info.id,
                              user_id=user_info.id,
                              role=0)
@@ -114,7 +114,7 @@ def submit_join(request: schemas.LeagueInfoRequest, db: Session = Depends(get_db
     return {"status": 1}
 
 @router.get("/join/{id}", status_code=status.HTTP_202_ACCEPTED)
-def submit_join(id: int, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
+def submit_join_by_id(id: int, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
     league_info = db.query(models.League).filter(id == models.League.id).first()
     if not league_info:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
@@ -124,7 +124,7 @@ def submit_join(id: int, db: Session = Depends(get_db), current_user: str = Depe
     league_user_info = db.query(models.LeagueUser).filter(models.LeagueUser.league_id == league_info.id).filter(models.LeagueUser.user_id == user_info.id).first()
     if league_user_info:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
-                    detail=f"User {current_user} has submitted to join League ID {id} !")        
+                    detail=f"User {current_user} has submitted to join this challenge!")        
     info = models.LeagueUser(league_id=league_info.id,
                              user_id=user_info.id,
                              role=0)
