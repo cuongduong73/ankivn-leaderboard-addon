@@ -63,7 +63,7 @@ def show_by_name(request: schemas.LeagueInfoRequest, db: Session = Depends(get_d
     return create_league_info_response(info, db)
 
 @router.post("/add_user", status_code=status.HTTP_202_ACCEPTED)
-def add_user(request: schemas.AddUserRequest, response: Response,db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
+def add_user_by_name(request: schemas.AddUserByNameRequest, response: Response,db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
     current_user_info = check_user_existed_by_name(current_user, db).first()
     if current_user_info.role < ROLE_MOD:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
@@ -74,6 +74,33 @@ def add_user(request: schemas.AddUserRequest, response: Response,db: Session = D
     if not league_info:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"League {request.name} - ss{request.season} is not existed !")
+
+    user_info = check_user_existed_by_name(request.username, db).first()
+    league_user_info = db.query(models.LeagueUser).filter(models.LeagueUser.user_id == user_info.id)
+    info = models.LeagueUser(league_id=league_info.id,
+                        user_id=user_info.id,
+                        role=1)
+    if league_user_info.first():
+        response.status_code = status.HTTP_202_ACCEPTED
+        league_user_info.update({"role": 1})
+        db.commit()
+    else:
+        response.status_code = status.HTTP_201_CREATED        
+        db.add(info)
+        db.commit()
+        db.refresh(info)
+    return {"status": 1}
+
+@router.post("/add_user/id", status_code=status.HTTP_202_ACCEPTED)
+def add_user_by_id(request: schemas.AddUserByIDRequest, response: Response,db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
+    current_user_info = check_user_existed_by_name(current_user, db).first()
+    if current_user_info.role < ROLE_MOD:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                    detail=f"User {current_user} doesn't have this permission !")        
+    league_info = db.query(models.League).filter(request.id == models.League.id).first()
+    if not league_info:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"League id {request.id} is not existed !")
 
     user_info = check_user_existed_by_name(request.username, db).first()
     league_user_info = db.query(models.LeagueUser).filter(models.LeagueUser.user_id == user_info.id)

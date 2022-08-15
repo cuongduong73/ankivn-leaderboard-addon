@@ -135,7 +135,7 @@ class LeagueInfoResponse(CreateLeagueRequest):
         orm_mode = True
 
 
-class AddUserRequest(BaseModel):
+class AddUserByNameRequest(BaseModel):
     username: str
     league: LeagueInfoRequest
 
@@ -147,6 +147,18 @@ class AddUserRequest(BaseModel):
                     "name": "ankivn",
                     "season": 1,
                 }
+            }
+        }
+
+class AddUserByIDRequest(BaseModel):
+    username: str
+    id: int
+
+    class Config():
+        schema_extra = {
+            "example": {
+                "username": "chipheo",
+                "id": 4
             }
         }
 
