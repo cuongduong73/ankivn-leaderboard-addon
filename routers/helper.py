@@ -12,7 +12,7 @@ def create_league_info_response(info, db) -> schemas.LeagueInfoResponse:
     users = []
     for i in info.users:
         user = db.query(models.User).filter(i.user_id == models.User.id).first()
-        league_user = db.query(models.LeagueUser).filter(i.user_id == models.LeagueUser.user_id).first()
+        league_user = db.query(models.LeagueUser).filter(user.id == models.LeagueUser.user_id).filter(models.LeagueUser.league_id == info.id).first()
         # users.append(schemas.LeagueUser(**user.__dict__))
         users.append(schemas.LeagueUser(username=user.username, 
                                         gold=user.gold, 
