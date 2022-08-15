@@ -113,6 +113,26 @@ def submit_join(request: schemas.LeagueInfoRequest, db: Session = Depends(get_db
     db.refresh(info)
     return {"status": 1}
 
+@router.get("/join/{id}", status_code=status.HTTP_202_ACCEPTED)
+def submit_join(id: int, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
+    league_info = db.query(models.League).filter(id == models.League.id).first()
+    if not league_info:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"League ID {id} is not existed !")
+    
+    user_info = check_user_existed_by_name(current_user, db).first()
+    league_user_info = db.query(models.LeagueUser).filter(models.LeagueUser.league_id == league_info.id).filter(models.LeagueUser.user_id == user_info.id).first()
+    if league_user_info:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                    detail=f"User {current_user} has submitted to join League ID {id} !")        
+    info = models.LeagueUser(league_id=league_info.id,
+                             user_id=user_info.id,
+                             role=0)
+    db.add(info)
+    db.commit()
+    db.refresh(info)
+    return {"status": 1}
+
 @router.post("/sync", status_code=status.HTTP_201_CREATED)
 def sync(request: schemas.SyncRequest, response: Response, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
     if version.parse(MIN_ADDON_VERSION) > version.parse(request.version):
