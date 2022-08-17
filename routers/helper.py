@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from form import models, schemas
 from fastapi import status, HTTPException
 from utils import get_timestamp, calc_day_from
+from utils import calculate_xp
 
 ROLE_USER = 0
 ROLE_MOD = 1
@@ -46,6 +47,11 @@ def create_league_data_response(league_info, db) -> schemas.LeagueDataResponse:
 
     users_data = []
     for data in league_data:
+        xp_league = calculate_xp(reviews=data.reviews_league, 
+                                retention=data.retention_league, 
+                                minutes=data.minutes_league, 
+                                day=day, 
+                                study_days=data.study_days)
         user = db.query(models.User).filter(models.User.id == data.user_id).first()
         info = schemas.SyncResponse(username=user.username,
                                     gold=user.gold,
@@ -54,12 +60,14 @@ def create_league_data_response(league_info, db) -> schemas.LeagueDataResponse:
                                     streak=data.streak,
                                     study_days=data.study_days,
                                     day_over=day, 
-                                    xp=data.xp_league, 
+                                    xp=xp_league, 
                                     timestamp=data.timestamp,
                                     reviews=data.reviews_league,
                                     retention=data.retention_league,
                                     minutes=data.minutes_league)
         users_data.append(info)
+    
+    users_data.sort(key=lambda x: x.xp)
 
     response = schemas.LeagueDataResponse(league_id=league_info.id,
                                           name=league_info.name,
