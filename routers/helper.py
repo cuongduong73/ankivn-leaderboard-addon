@@ -67,7 +67,7 @@ def create_league_data_response(league_info, db) -> schemas.LeagueDataResponse:
                                     minutes=data.minutes_league)
         users_data.append(info)
     
-    users_data.sort(key=lambda x: x.xp)
+    users_data.sort(key=lambda x: x.xp, reverse=True)
 
     response = schemas.LeagueDataResponse(league_id=league_info.id,
                                           name=league_info.name,
