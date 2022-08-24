@@ -76,7 +76,7 @@ def add_user_by_name(request: schemas.AddUserByNameRequest, response: Response,d
                     detail=f"League {request.name} - ss{request.season} is not existed !")
 
     user_info = check_user_existed_by_name(request.username, db).first()
-    league_user_info = db.query(models.LeagueUser).filter(models.LeagueUser.user_id == user_info.id)
+    league_user_info = db.query(models.LeagueUser).filter(models.LeagueUser.user_id == user_info.id).filter(models.LeagueUser.league_id == league_info.id)
     info = models.LeagueUser(league_id=league_info.id,
                         user_id=user_info.id,
                         role=1)
@@ -103,7 +103,7 @@ def add_user_by_id(request: schemas.AddUserByIDRequest, response: Response,db: S
                     detail=f"League id {request.id} is not existed !")
 
     user_info = check_user_existed_by_name(request.username, db).first()
-    league_user_info = db.query(models.LeagueUser).filter(models.LeagueUser.user_id == user_info.id)
+    league_user_info = db.query(models.LeagueUser).filter(models.LeagueUser.user_id == user_info.id).filter(models.LeagueUser.league_id == request.id)
     info = models.LeagueUser(league_id=league_info.id,
                         user_id=user_info.id,
                         role=1)
