@@ -138,6 +138,7 @@ def remove_user_by_id(request: schemas.AddUserByIDRequest, response: Response, d
     league_user_data = db.query(models.LeagueData).filter(models.LeagueData.league_id == league_info.id).filter(models.LeagueData.user_id == user_info.id)
     if league_user_data:
         league_user_data.delete(synchronize_session=False)
+        db.commit()
     return {"status": 1}      
 
 @router.post("/join", status_code=status.HTTP_202_ACCEPTED)
