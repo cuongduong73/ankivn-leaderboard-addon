@@ -118,6 +118,25 @@ def add_user_by_id(request: schemas.AddUserByIDRequest, response: Response,db: S
         db.refresh(info)
     return {"status": 1}
 
+@router.post("/remove_user/id", status_code=status.HTTP_202_ACCEPTED)
+def remove_user_by_id(request: schemas.AddUserByIDRequest, response: Response, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
+    current_user_info = check_user_existed_by_name(current_user, db).first()
+    if current_user_info.role < ROLE_MOD:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                    detail=f"User {current_user} doesn't have this permission !")        
+    league_info = db.query(models.League).filter(request.id == models.League.id).first()
+    if not league_info:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"League id {request.id} is not existed !")
+    user_info = check_user_existed_by_name(request.username, db).first()
+    league_user_info = db.query(models.LeagueUser).filter(models.LeagueUser.user_id == user_info.id).filter(models.LeagueUser.league_id == request.id)
+    if not league_user_info.first():
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE,
+                            detail=f"User {user_info.username} has not joined {league_info.name} - ss{league_info.season} yet !")
+    league_user_info.update({"role": 0})
+    db.commit()  
+    return {"status": 1}      
+
 @router.post("/join", status_code=status.HTTP_202_ACCEPTED)
 def submit_join_by_name(request: schemas.LeagueInfoRequest, db: Session = Depends(get_db), current_user: str = Depends(oauth2.get_current_user)):
     league_info = db.query(models.League).filter(
@@ -179,14 +198,18 @@ def sync(request: schemas.SyncRequest, response: Response, db: Session = Depends
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE,
                             detail=f"League {league_info.name} - ss{league_info.season} has not started !")
     user_info = db.query(models.User).filter(models.User.username == current_user).first()
-    _joined = False
-    for i in user_info.leagues:
-        if i.league_id == request.league_id and i.role >=1:
-            _joined = True
-            break
-    if not _joined:
+    league_user_info = db.query(models.LeagueUser).filter(models.LeagueUser.user_id == user_info.id).filter(models.LeagueUser.league_id == request.league_id)
+    if not league_user_info.first() or league_user_info.first().role < 1:
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE,
-                            detail=f"User {current_user} has not joined {league_info.name} - ss{league_info.season} yet !")
+                            detail=f"User {user_info.username} has not joined {league_info.name} - ss{league_info.season} yet !")
+    # _joined = False
+    # for i in user_info.leagues:
+    #     if i.league_id == request.league_id and i.role >=1:
+    #         _joined = True
+    #         break
+    # if not _joined:
+    #     raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE,
+    #                         detail=f"User {current_user} has not joined {league_info.name} - ss{league_info.season} yet !")
     today = calc_day_from(start_timestamp, timestamp)
     xp_league = calculate_xp(reviews=request.reviews_league, 
                              retention=request.retention_league, 
